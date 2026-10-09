@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { 
   GraduationCap, 
@@ -12,12 +12,15 @@ import {
   Compass, 
   Award,
   LogOut,
-  LogIn
+  LogIn,
+  Database
 } from 'lucide-react';
 import { UserRole } from '../types';
+import { PostgresModal } from './database/PostgresModal';
 
 export const Navbar: React.FC = () => {
-  const { currentUser, activeRole, activeTab, setActiveTab, resetToDemoData, isAuthenticated, logout } = useApp();
+  const { currentUser, activeRole, setActiveTab, resetToDemoData, isAuthenticated, logout, dbStatus } = useApp();
+  const [showDbModal, setShowDbModal] = useState(false);
 
   const roleLabels: Record<UserRole, { label: string; icon: React.ReactNode; color: string }> = {
     director: { 
@@ -117,6 +120,22 @@ export const Navbar: React.FC = () => {
               </button>
             )}
 
+            {/* Badge de Base de Datos PostgreSQL */}
+            <button
+              onClick={() => setShowDbModal(true)}
+              title="Configuración de Base de Datos PostgreSQL"
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-colors ${
+                dbStatus?.postgres?.ok
+                  ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/30'
+                  : 'bg-amber-500/20 text-amber-300 border-amber-500/30 hover:bg-amber-500/30'
+              }`}
+            >
+              <Database className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">
+                {dbStatus?.postgres?.ok ? 'Postgres: Conectado' : 'PostgreSQL Cloud'}
+              </span>
+            </button>
+
             {/* Botón reiniciar Demo */}
             <button
               onClick={resetToDemoData}
@@ -129,6 +148,9 @@ export const Navbar: React.FC = () => {
 
         </div>
       </div>
+
+      {/* Modal de Conexión a PostgreSQL */}
+      {showDbModal && <PostgresModal isOpen={showDbModal} onClose={() => setShowDbModal(false)} />}
     </header>
   );
 };

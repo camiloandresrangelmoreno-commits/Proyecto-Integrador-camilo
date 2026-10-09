@@ -19,6 +19,7 @@ import {
   INITIAL_SUPERVISION_VISITS, 
   INITIAL_EVALUATIONS 
 } from '../data/initialData';
+import { apiService, DbStatusResponse } from '../services/api';
 
 interface AppContextType {
   currentUser: User;
@@ -37,6 +38,8 @@ interface AppContextType {
   classPlans: ClassPlan[];
   visits: SupervisionVisit[];
   evaluations: PedagogicalEvaluation[];
+  dbStatus: DbStatusResponse | null;
+  checkDbStatus: () => Promise<void>;
   
   // Actions
   addActivityLog: (newLog: Omit<ActivityLog, 'id' | 'institutionValidated'>) => void;
@@ -86,6 +89,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   });
 
   const [activeTab, setActiveTab] = useState<'app' | 'guide'>('app');
+  const [dbStatus, setDbStatus] = useState<DbStatusResponse | null>(null);
+
+  const checkDbStatus = async () => {
+    const status = await apiService.checkHealth();
+    setDbStatus(status);
+  };
+
+  useEffect(() => {
+    checkDbStatus();
+  }, []);
 
   // Login handler
   const login = (role: UserRole, identifier?: string, password?: string) => {
@@ -195,6 +208,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     setActivityLogs(prev => [log, ...prev]);
 
+    // Sincronizar en segundo plano con el servidor Express/PostgreSQL
+    apiService.createActivityLog(log);
+
     // Update assignment completed hours
     setAssignments(prev => prev.map(a => {
       if (a.id === newLog.assignmentId) {
@@ -223,6 +239,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
       return l;
     }));
+
+    // Sincronizar validación con el servidor Express/PostgreSQL
+    apiService.validateLog(logId, validatedBy, observations);
 
     // Update validated hours on assignment
     const log = activityLogs.find(l => l.id === logId);
@@ -304,6 +323,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       assignedCount: 0
     };
     setInstitutions(prev => [inst, ...prev]);
+    apiService.createInstitution(newInst);
   };
 
   const updateInstitutionStatus = (instId: string, status: Institution['agreementStatus']) => {
@@ -319,6 +339,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       password: newAdvisor.password || 'docente2026'
     };
     setAdvisors(prev => [...prev, advisor]);
+    apiService.createAdvisor(newAdvisor);
   };
 
   const assignStudentToInstitution = (
@@ -412,6 +433,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         logout,
         advisors,
         addAdvisor,
+        dbStatus,
+        checkDbStatus,
         institutions,
         assignments,
         activityLogs,
