@@ -48,12 +48,28 @@ apiRouter.post('/setup-database', async (_req: Request, res: Response) => {
   }
 });
 
+// Helper para ejecutar consultas con tolerancia a esquemas gestion.* o public.*
+async function safeQuery(pool: any, queries: string[], params: any[] = []) {
+  for (const q of queries) {
+    try {
+      const res = await pool.query(q, params);
+      return res;
+    } catch {
+      continue;
+    }
+  }
+  throw new Error('No se pudo ejecutar la consulta en los esquemas disponibles');
+}
+
 // 3. Endpoint: Instituciones y Convenios
 apiRouter.get('/instituciones', async (_req: Request, res: Response) => {
   try {
     const pool = getDbPool();
     if (pool) {
-      const result = await pool.query('SELECT * FROM institucion_receptora ORDER BY id_institucion ASC');
+      const result = await safeQuery(pool, [
+        'SELECT id_institucion, nombre, direccion, ciudad, telefono FROM gestion.institucion ORDER BY id_institucion ASC;',
+        'SELECT * FROM institucion_receptora ORDER BY id_institucion ASC;'
+      ]);
       return res.json({ ok: true, source: 'postgresql', data: result.rows });
     }
   } catch (err: any) {
