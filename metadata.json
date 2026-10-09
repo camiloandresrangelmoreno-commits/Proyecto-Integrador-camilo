@@ -1,0 +1,6 @@
+{
+  "name": "SIGPA - Gestión de Prácticas Académicas UDI",
+  "description": "Sistema Integral de Gestión de Prácticas Académicas para programas de Licenciatura e Ingeniería de Sistemas - UDI. Trazabilidad, supervisión y reportes para acreditación MEN.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
